@@ -81,13 +81,17 @@ jobs:
                 CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-"
           cd kernel-source
           
-          # ⚡ 彻底移出 Kconfig 中的引用，而不是建空文件
-          # 删掉 init/Kconfig 里 source "kernel/sched_assist/Kconfig" 这一行
-          sed -i '/kernel\/sched_assist\/Kconfig/d' init/Kconfig
+          # ⚡ 终极排雷：自动检查 init/Kconfig 中的 source 引用，如果文件不存在，自动删掉该行引用
+          echo "正在自动清理缺失的 Kconfig 引用..."
+          grep '^source' init/Kconfig | awk -F'"' '{print $2}' | while read kconfig_path; do
+              if [ ! -f "$kconfig_path" ]; then
+                  echo "发现缺失文件，移除引用: $kconfig_path"
+                  sed -i "/source \"$kconfig_path\"/d" init/Kconfig
+              fi
+          done
           
           make ${args} ${{ github.event.inputs.defconfig }}
           
-          # ⚡ 在生成最终的 .config 后，强行关闭这个选项
           ./scripts/config --file ../out/.config -d CONFIG_SCHED_ASSIST
           
           make -j$(nproc) ${args}

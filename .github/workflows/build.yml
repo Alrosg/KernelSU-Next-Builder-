@@ -86,7 +86,7 @@ jobs:
           grep '^source' init/Kconfig | awk -F'"' '{print $2}' | while read kconfig_path; do
               if [ ! -f "$kconfig_path" ]; then
                   echo "发现缺失文件，移除引用: $kconfig_path"
-                  sed -i "/source \"$kconfig_path\"/d" init/Kconfig
+                  sed -i "\|source \"$kconfig_path\"|d" init/Kconfig
               fi
           done
           

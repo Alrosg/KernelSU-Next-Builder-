@@ -80,7 +80,16 @@ jobs:
                 CROSS_COMPILE=$GITHUB_WORKSPACE/aarch64-linux-android-4.9/bin/aarch64-linux-android- \
                 CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-"
           cd kernel-source
+          
+          # ⚡ 彻底移出 Kconfig 中的引用，而不是建空文件
+          # 删掉 init/Kconfig 里 source "kernel/sched_assist/Kconfig" 这一行
+          sed -i '/kernel\/sched_assist\/Kconfig/d' init/Kconfig
+          
           make ${args} ${{ github.event.inputs.defconfig }}
+          
+          # ⚡ 在生成最终的 .config 后，强行关闭这个选项
+          ./scripts/config --file ../out/.config -d CONFIG_SCHED_ASSIST
+          
           make -j$(nproc) ${args}
 
       - name: 📦 Package with AnyKernel3
